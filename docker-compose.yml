@@ -1,0 +1,31 @@
+services:
+  app:
+    build:
+      context: .
+    environment:
+      DATABASE_URL: postgresql://poke-api:poke-api@db:5432/poke-api
+      POKEMON_AMOUNT: 1025
+      GENERATIONS_AMOUNT: 9
+      EGG_GROUP_AMOUNT: 16
+      GENERATIONS: '{"generation-i":1996,"generation-ii":1999,"generation-iii":2002,"generation-iv":2006,"generation-v":2010,"generation-vi":2013,"generation-vii":2016,"generation-viii":2019,"generation-ix":2022}'
+    command: bash start.sh
+    ports:
+      - "5001:5001"
+    volumes:
+      - .:/poke_api
+    networks:
+      - poke-api-net
+  db:
+    image: postgres:18.3
+    environment:
+      POSTGRES_USER: poke-api
+      POSTGRES_PASSWORD: poke-api
+      POSTGRES_DB: poke-api
+    ports:
+      - "5432:5432"
+    networks:
+      - poke-api-net
+networks:
+  poke-api-net:
+    name: poke-api-net
+    external: true
