@@ -101,10 +101,10 @@ class PokemonPopulatorService:
 
                         if form is None:
                             form = self.__save_pokemon_form(session, specie.id, form_pokemon, generation.id, form_name)
-                            self.__save_base_status(session, form.id, pokemon.stats)
+                            self.__save_base_status(session, form.id, form_pokemon.stats)
                             self.__save_types(session, form, form_pokemon.types)
                             self.__save_abilities(session, form.id, form_pokemon.abilities)
-                            self.__save_moves(session, form.id, pokemon.moves, generation)
+                            self.__save_moves(session, form.id, form_pokemon.moves, generation)
                 session.commit()
 
     def __save_pokemon_specie(self, session: Session, pokedex_number, name) -> PokemonSpecie:
