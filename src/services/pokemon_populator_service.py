@@ -1,3 +1,4 @@
+import requests
 import pokebase
 from sqlalchemy.orm import Session
 
@@ -101,8 +102,8 @@ class PokemonPopulatorService:
 
                         if form is None:
                             form = self.__save_pokemon_form(session, specie.id, form_pokemon, generation.id, form_name)
-                            self.__save_base_status(session, form.id, form_pokemon.stats)
-                            self.__save_types(session, form, form_pokemon.types)
+                            self.__save_base_status(session, form.id, form_pokemon.id, generation.id)
+                            self.__save_types(session, form, form_pokemon, generation)
                             self.__save_abilities(session, form.id, form_pokemon.abilities)
                             self.__save_moves(session, form.id, form_pokemon.moves, generation)
                 session.commit()
@@ -207,12 +208,26 @@ class PokemonPopulatorService:
                 )
                 self.__pokemon_sprite_repository.save(session, sprite)
 
-    def __save_base_status(self, session: Session, form_id: int, pokemon_status):
-        stats_dict = {stat.stat.name: stat.base_stat for stat in pokemon_status}
+    def __save_base_status(self, session: Session, form_id: int, api_form_pokemon_id: int, current_gen_id: int):
+        url = f"https://pokeapi.co/api/v2/pokemon/{api_form_pokemon_id}"
+        response = requests.get(url).json()
+        
+        stats_dict = {s['stat']['name']: s['base_stat'] for s in response['stats']}
+        past_stats = response.get('past_stats', [])
+        if past_stats:
+            sorted_past = sorted(past_stats, key=lambda x: int(x['generation']['url'].split('/')[-2]))
+        
+            for past in sorted_past:
+                past_gen_id = int(past['generation']['url'].split('/')[-2])
+            
+                if current_gen_id <= past_gen_id:
+                    new_past_stats = {s['stat']['name']: s['base_stat'] for s in past['stats']}
+                    stats_dict.update(new_past_stats)
+                    break
 
-        if "special" in stats_dict and "special-attack" not in stats_dict and "special-defense" not in stats_dict:
-            stats_dict["special-attack"] = stats_dict["special"]
-            stats_dict["special-defense"] = stats_dict["special"]
+        if "special" in stats_dict:
+                stats_dict["special-attack"] = stats_dict["special"]
+                stats_dict["special-defense"] = stats_dict["special"]
 
         base_status = BaseStatus(
             form_id=form_id,
@@ -225,9 +240,22 @@ class PokemonPopulatorService:
         )
         self.__base_status_repository.save(session, base_status)
 
-    def __save_types(self, session: Session, form: PokemonForm, types):
-        for type in types:
-            type_obj = self.__type_repository.find_by_name(session, type.type.name)
+    def __save_types(self, session: Session, form: PokemonForm, form_pokemon, current_gen: Generation):
+        types_to_save = form_pokemon.types
+    
+        if hasattr(form_pokemon, 'past_types') and form_pokemon.past_types:
+            for past in form_pokemon.past_types:
+                past_gen_url = past.generation.url
+                past_gen_id = int(past_gen_url.split('/')[-2])
+            
+                if current_gen.id <= past_gen_id:
+                    types_to_save = past.types
+                    break
+
+        for t in types_to_save:
+            type_name = t.type.name
+            type_obj = self.__type_repository.find_by_name(session, type_name)
+        
             if type_obj is not None and type_obj not in form.types:
                 form.types.append(type_obj)
 
