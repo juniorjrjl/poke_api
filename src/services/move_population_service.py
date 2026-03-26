@@ -31,7 +31,7 @@ class MovePopulationService:
             try:
                 move_data = pokebase.move(move_name)
             except Exception as e:
-                print(f"[WARN] Não foi possível buscar o Move '{move_name}': {e}")
+                print(f"[WARN] Cannot fetch move '{move_name}': {e}")
                 continue
 
             self.__insert(move_data)
@@ -41,7 +41,8 @@ class MovePopulationService:
         with self.__type_repository.get_session() as session:
             type_entity = self.__type_repository.find_by_name(session, move_data.type.name)
             if type_entity is None:
-                raise EntityNotFoundException(f'O tipo #{move_data.type.name} não foi encontrado')
+                print(f"[WARN] A type '{move_data.type.name}' for '{move_data.name}' was not found in the database, ignoring ...")
+                return
 
             meta = getattr(move_data, "meta", None)
 

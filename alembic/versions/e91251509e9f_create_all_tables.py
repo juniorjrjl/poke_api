@@ -1,8 +1,8 @@
-"""create tables
+"""create all tables
 
-Revision ID: 37aca8a4d23e
+Revision ID: e91251509e9f
 Revises: 
-Create Date: 2025-09-30 23:05:59.737196
+Create Date: 2026-03-25 09:46:34.623098
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '37aca8a4d23e'
+revision: str = 'e91251509e9f'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -125,10 +125,12 @@ def upgrade() -> None:
     op.create_table('type_effectiveness',
     sa.Column('attack_type_id', sa.Integer(), nullable=False),
     sa.Column('defense_type_id', sa.Integer(), nullable=False),
+    sa.Column('generation_id', sa.Integer(), nullable=False),
     sa.Column('multiplier', sa.Float(), nullable=False),
     sa.ForeignKeyConstraint(['attack_type_id'], ['types.id'], ),
     sa.ForeignKeyConstraint(['defense_type_id'], ['types.id'], ),
-    sa.PrimaryKeyConstraint('attack_type_id', 'defense_type_id')
+    sa.ForeignKeyConstraint(['generation_id'], ['generations.id'], ),
+    sa.PrimaryKeyConstraint('attack_type_id', 'defense_type_id', 'generation_id')
     )
     op.create_table('version_groups',
     sa.Column('id', sa.Integer(), nullable=False),

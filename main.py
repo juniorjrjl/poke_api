@@ -46,6 +46,8 @@ POKEMON_AMOUNT = int(os.getenv("POKEMON_AMOUNT"))
 GENERATIONS_AMOUNT = int(os.getenv("GENERATIONS_AMOUNT"))
 GENERATIONS = json.loads(os.getenv("GENERATIONS"))
 EGG_GROUP_AMOUNT = int(os.getenv("EGG_GROUP_AMOUNT"))
+POKEMON_TYPES_WHITELIST = os.getenv("POKEMON_TYPES_WHITELIST").split(",")
+TYPES_INTRO_MAP = json.loads(os.getenv("TYPES_INTRO_MAP"))
 
 engine = create_engine(database_url)
 session_local = sessionmaker(bind=engine)
@@ -75,8 +77,14 @@ evolution_repository = EvolutionRepository(session_local)
 
 gender_population_service = GenderPopulationService(gender_repository)
 egg_group_population_service = EggGroupPopulationService(egg_group_repository, EGG_GROUP_AMOUNT)
-type_population_service = TypePopulationService(type_repository)
-type_effectiveness_service = TypeEffectivenessService(type_effectiveness_repository, type_repository)
+type_population_service = TypePopulationService(type_repository, POKEMON_TYPES_WHITELIST)
+type_effectiveness_service = TypeEffectivenessService(
+    type_effectiveness_repository, 
+    type_repository, 
+    generation_repository,
+    POKEMON_TYPES_WHITELIST,
+    TYPES_INTRO_MAP
+)
 ability_population_service = AbilityPopulationService(ability_repository)
 move_population_service = MovePopulationService(move_repository, type_repository)
 generation_population_service = GenerationPopulationService(generation_repository, GENERATIONS, GENERATIONS_AMOUNT)
@@ -123,11 +131,11 @@ start_in = datetime.now()
 print(f"Populando a base... (#{start_in})")
 gender_population_service.populate()
 egg_group_population_service.populate()
+generation_population_service.populate()
 type_population_service.populate()
 type_effectiveness_service.populate()
 ability_population_service.populate()
 move_population_service.populate()
-generation_population_service.populate()
 version_group_population_service.populate()
 pokemon_populator_service.populate()
 item_population_service.populate()
